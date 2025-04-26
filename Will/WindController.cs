@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class WindController : MonoBehaviour 
 {
-    [SerializeField] private string portName = "COM4"; // Change this to match your Arduino port
+    [SerializeField] private string portName = "COM6"; // Change this to match your Arduino port
     [SerializeField] private int baudRate = 9600;
     [SerializeField] private float updateInterval = 0.1f;
     
