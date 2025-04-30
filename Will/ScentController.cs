@@ -13,9 +13,9 @@ public class ScentController : MonoBehaviour
     [SerializeField] private int udpPort = 5010;
     
     // Scent parameters
-    [SerializeField] private int testScentNumber = 9;  // Default scent number
+    [SerializeField] private int testScentNumber = 1;
     [SerializeField] private int intensity = 100;
-    private int fanActive = 5000;
+    [SerializeField] private int fanActive = 10000;
     [SerializeField] private int valveDelay = 1000;
     
     // Skid detection parameters
@@ -30,15 +30,15 @@ public class ScentController : MonoBehaviour
     [SerializeField] private float decelerationThreshold = -10f; // Negative value: m/s² (more negative = harder braking)
     
     // Testing parameters
-    [SerializeField] private bool useAudioForTesting = true; // Toggle to use audio instead of scent
+    [SerializeField] private bool useAudioForTesting = false; // Toggle to use audio instead of scent
     [SerializeField] private AudioClip skidSound; // Sound to play when skid is detected
     [SerializeField] private AudioClip brakeSound; // Sound to play when hard braking is detected
-    [SerializeField] private bool debugVisuals = true; // Show on-screen debug information
+    [SerializeField] private bool debugVisuals = true;
     
     private UdpClient udpClient;
     private bool clientInitialized = false;
     private Rigidbody vehicleRigidbody;
-    private float lastSkidTime = -10f; // Initialize to allow immediate trigger
+    private float lastSkidTime = -10f;
     private Vector3 lastRotation;
     private float currentYawRate;
     private Vector3 lastVelocity;
@@ -50,7 +50,6 @@ public class ScentController : MonoBehaviour
     {
         InitializeUdpClient();
         
-        // Find the vehicle rigidbody
         vehicleRigidbody = GameObject.FindWithTag("Vehicle").GetComponent<Rigidbody>();
         if (vehicleRigidbody == null)
         {
@@ -63,16 +62,14 @@ public class ScentController : MonoBehaviour
             lastVelocity = vehicleRigidbody.velocity;
         }
         
-        // Initialize audio source for testing sounds
         if (useAudioForTesting && !TryGetComponent(out audioSource))
         {
             audioSource = gameObject.AddComponent<AudioSource>();
             audioSource.playOnAwake = false;
-            audioSource.spatialBlend = 0f; // Make sound 2D
-            audioSource.priority = 0; // High priority
+            audioSource.spatialBlend = 0f;
+            audioSource.priority = 0;
             Debug.Log("Added AudioSource component for testing sounds");
             
-            // Create default beep sounds if none assigned
             if (skidSound == null)
             {
                 Debug.LogWarning("No skid sound assigned. Will use beep for testing.");
@@ -84,7 +81,6 @@ public class ScentController : MonoBehaviour
             }
         }
         
-        // Start detection routine
         StartCoroutine(CheckVehicleConditions());
     }
     
@@ -92,7 +88,6 @@ public class ScentController : MonoBehaviour
     {
         try
         {
-            // Initialize UDP client
             udpClient = new UdpClient();
             udpClient.EnableBroadcast = true;
             clientInitialized = true;
@@ -112,12 +107,12 @@ public class ScentController : MonoBehaviour
         {
             if (useAudioForTesting)
             {
-                PlayTestBeep(440, 0.5f); // Play A4 note for testing
+                PlayTestBeep(440, 0.5f);
                 Debug.Log("Test beep played (Key 9 pressed)");
             }
             else
             {
-                TriggerScent(testScentNumber);  // Use the inspector-specified scent number
+                TriggerScent(testScentNumber);
             }
         }
         
@@ -128,8 +123,7 @@ public class ScentController : MonoBehaviour
             float yawDifference = Mathf.DeltaAngle(lastRotation.y, currentRotation.y);
             currentYawRate = Mathf.Abs(yawDifference / Time.deltaTime);
             lastRotation = currentRotation;
-            
-            // Calculate acceleration
+
             currentAcceleration = (vehicleRigidbody.velocity - lastVelocity) / Time.deltaTime;
             lastVelocity = vehicleRigidbody.velocity;
         }
@@ -159,7 +153,6 @@ public class ScentController : MonoBehaviour
         }
     }
     
-    // Coroutine to check for vehicle conditions
     private IEnumerator CheckVehicleConditions()
     {
         while (true)
@@ -199,12 +192,10 @@ public class ScentController : MonoBehaviour
         }
     }
     
-    // Method to check if the vehicle is skidding
     private bool CheckSkidCondition()
     {
         float currentSpeed = vehicleRigidbody.velocity.magnitude;
         
-        // Check if conditions meet skid criteria
         if (currentSpeed > skidSpeedThreshold && currentYawRate > skidYawRateThreshold)
         {
             Debug.Log($"Skid detected! Speed: {currentSpeed:F1} m/s, Yaw Rate: {currentYawRate:F1} deg/s");
@@ -214,13 +205,11 @@ public class ScentController : MonoBehaviour
         return false;
     }
     
-    // Method to check if the vehicle is hard braking
     private bool CheckHardBrakingCondition()
     {
         float currentSpeed = vehicleRigidbody.velocity.magnitude;
         float forwardAccel = Vector3.Dot(currentAcceleration, vehicleRigidbody.transform.forward);
         
-        // Check if conditions meet hard braking criteria
         // We need to be moving at decent speed and have strong negative acceleration (deceleration)
         if (currentSpeed > minSpeedForBraking && forwardAccel < decelerationThreshold)
         {
@@ -231,7 +220,6 @@ public class ScentController : MonoBehaviour
         return false;
     }
     
-    // Play a skid sound
     private void PlaySkidSound()
     {
         if (audioSource != null)
@@ -243,13 +231,11 @@ public class ScentController : MonoBehaviour
             }
             else
             {
-                // High-pitched double beep for skidding
                 StartCoroutine(PlaySequenceBeep(660, 0.2f, 880, 0.2f));
             }
         }
     }
     
-    // Play a brake sound
     private void PlayBrakeSound()
     {
         if (audioSource != null)
@@ -261,13 +247,11 @@ public class ScentController : MonoBehaviour
             }
             else
             {
-                // Low-pitched single beep for braking
                 PlayTestBeep(220, 0.5f);
             }
         }
     }
     
-    // Play a test beep using AudioSource.PlayOneShot with a generated AudioClip
     private void PlayTestBeep(float frequency, float duration)
     {
         if (audioSource != null)
@@ -290,7 +274,6 @@ public class ScentController : MonoBehaviour
         }
     }
     
-    // Play a sequence of two beeps
     private IEnumerator PlaySequenceBeep(float freq1, float dur1, float freq2, float dur2)
     {
         PlayTestBeep(freq1, dur1);
@@ -313,19 +296,16 @@ public class ScentController : MonoBehaviour
             }
         }
         
-        // Use custom parameters if provided, otherwise use default values
         int actualIntensity = customIntensity > 0 ? customIntensity : intensity;
         int actualFanActive = customFanActive > 0 ? customFanActive : fanActive;
         int actualValveDelay = customValveDelay > 0 ? customValveDelay : valveDelay;
         
         // Format: [random_id],OUT,[scent_number],[intensity],1,[fan_active],[valve_delay]
         int messageId = Random.Range(10000, 100000);
-        string scentStr = scentNumber.ToString("D2");  // Pad with zero if single digit
+        string scentStr = scentNumber.ToString("D2");
         string message = $"{messageId},OUT,{scentStr},{actualIntensity},1,{actualFanActive:D5},{actualValveDelay}";
         
         byte[] sendBytes = Encoding.ASCII.GetBytes(message);
-        
-        // Send 3 times for reliability
         StartCoroutine(SendMessageMultipleTimes(sendBytes, 3));
         
         Debug.Log($"Sent scent trigger: {message}");
@@ -352,7 +332,7 @@ public class ScentController : MonoBehaviour
                 Debug.LogError($"Error sending UDP packet: {e.Message}");
             }
             
-            yield return new WaitForSeconds(0.05f);  // Small delay between sends
+            yield return new WaitForSeconds(0.05f);
         }
     }
     
